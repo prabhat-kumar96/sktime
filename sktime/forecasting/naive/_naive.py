@@ -608,6 +608,39 @@ class NaiveForecaster(_BaseWindowForecaster):
 
         return pred_var
 
+    def _update(self, y, X=None, update_params=True):
+        """Update internal state with new observations.
+
+        Parameters
+        ----------
+        y : pd.Series
+            New observed values to incorporate.
+        X : pd.DataFrame, optional (default=None)
+            Ignored for NaiveForecaster (no exogenous support).
+        update_params : bool, optional (default=True)
+            If True, update any fitted parameters that depend on the
+            observed series. If False, only cutoff/_y is updated by the
+            base class.
+
+        Returns
+        -------
+        self : an instance of self
+        """
+        # At this point, BaseForecaster.update has already updated
+        # self._y, self._X and self._cutoff via _update_y_X.
+        # Here we only update internal fitted attributes that depend
+        # on the observed series, but avoid refitting.
+        if update_params:
+            # ensure seasonal periodicity attribute available
+            self.sp_ = check_sp(self.sp or 1)
+
+            # if window_length was not set by the user, keep the window_length_
+            # aligned with the current length of observed data
+            if self.window_length is None:
+                self.window_length_ = len(self._y)
+
+        return self
+
     @classmethod
     def get_test_params(cls, parameter_set="default"):
         """Return testing parameter settings for the estimator.
